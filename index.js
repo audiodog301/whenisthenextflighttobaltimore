@@ -51,16 +51,34 @@ async function populate(pos) {
   );
   let data = await response.json();
 
-  if (await data.today.error) {
-    loading.textContent = `${await data.tomorrow.best_flights[0].flights[0].flight_number} arrives tomorrow ${await data.tomorrow.best_flights[0].flights[0].arrival_airport.time.split(" ")[1]}`;
+  let day, lookat;
+
+  if (data.today.error) {
+    day = "tomorrow";
+    lookat = data.tomorrow;
   } else {
-    loading.textContent = `${await data.today.best_flights[0].flights[0].flight_number} arrives today ${await data.today.best_flights[0].flights[0].arrival_airport.time.split(" ")[1]}`;
+    day = "today";
+    lookat = data.today;
   }
+
+  let nflights = lookat.best_flights[0].flights.length;
+  console.log(nflights);
+  console.log(lookat.best_flights[0].flights[1]);
+
+  let itinerary = "";
+
+  for (const flight of lookat.best_flights[0].flights) {
+    itinerary += `${flight.flight_number + ", "}`;
+  }
+
+  itinerary = itinerary.slice(0, -2);
+
+  loading.textContent = `${itinerary} to arrive ${day} ${lookat.best_flights[0].flights[nflights - 1].arrival_airport.time.split(" ")[1]}`;
 }
 
 async function main() {
-  function errorCallback(position) {
-    console.log(`error ${position.code}: ${position.message}`);
+  function errorCallback(err) {
+    console.log(`error ${err.code}: ${err.message}`);
   }
 
   if ("geolocation" in navigator) {
