@@ -1,29 +1,59 @@
+async function airports() {
+  const response = await fetch(
+    "https://davidmegginson.github.io/ourairports-data/airports.csv",
+  );
+  return await response.text();
+}
+
 async function main() {
   const loading = document.getElementsByTagName("p")[0];
   console.log(loading);
 
-  let now = new Date();
-  console.log(now);
-  let response = await fetch(
-    `https://serpapi.com/search.json?engine=google_flights&type=2&departure_id=BNA&arrival_id=BWI&outbound_date=${now.toLocaleDateString("en-CA")}&hl=en&api_key=e3bd532f4329b16103190ef6f3ac8cbe9b07eb591074fca3b9593208496cea39`,
-  );
+  let lat;
+  let long;
+
+  const list = await airports();
+
+  function successCallback(position) {
+    lat = position.coords.latitude;
+    long = position.coords.longitude;
+
+    console.log(`Latitude: ${lat}, Longitude: ${long}`);
+  }
+
+  function errorCallback(position) {
+    console.log(`error lmao`);
+  }
+
+  if ("geolocation" in navigator) {
+    const options = {
+      enableHighAccuracy: true, // Forces GPS use if available
+      timeout: 5000, // Time in ms before throwing an error
+      maximumAge: 0, // Forces a fresh look up instead of cached data
+    };
+
+    // 2. Request the current position
+    navigator.geolocation.getCurrentPosition(
+      successCallback,
+      errorCallback,
+      options,
+    );
+  } else {
+    console.log("Geolocation is not supported by this browser.");
+  }
+
+  // 3. Handle a successful response
+
+  let response = await fetch(`https://sounds.liamfissell.com/api/secret/BNA`);
 
   let data = await response.json();
 
   console.log(await data);
 
-  if (await data.error) {
-    now.setDate(now.getDate() + 1);
-    let response = await fetch(
-      `https://serpapi.com/search.json?engine=google_flights&type=2&departure_id=BNA&arrival_id=BWI&outbound_date=${now.toLocaleDateString("en-CA")}&hl=en&api_key=e3bd532f4329b16103190ef6f3ac8cbe9b07eb591074fca3b9593208496cea39`,
-    );
-
-    let data = await response.json();
-    console.log(await data);
-
-    loading.textContent = `${await data.best_flights[0].flights[0].flight_number} arrives tomorrow ${await data.best_flights[0].flights[0].arrival_airport.time.split(" ")[1]}`;
+  if (await data.today.error) {
+    loading.textContent = `${await data.tomorrow.best_flights[0].flights[0].flight_number} arrives tomorrow ${await data.tomorrow.best_flights[0].flights[0].arrival_airport.time.split(" ")[1]}`;
   } else {
-    loading.textContent = `${await data.best_flights[0].flights[0].flight_number} arrives today ${await data.best_flights[0].flights[0].arrival_airport.time.split(" ")[1]}`;
+    loading.textContent = `${await data.today.best_flights[0].flights[0].flight_number} arrives today ${await data.today.best_flights[0].flights[0].arrival_airport.time.split(" ")[1]}`;
   }
 }
 
